@@ -13,18 +13,31 @@ struct ContentView : View {
     @EnvironmentObject var viewModel: ViewModel
     
     var body: some View {
+        ZStack {
         ARViewContainer().edgesIgnoringSafeArea(.all)
         
-        HStack {
-            VStack {
-                Spacer()
-                
-                Button {
-                    viewModel.isShowingView = true
-                } label: {
-                    Text("Draw")
+            HStack {
+                VStack {
+                    Spacer()
+                    
+                    Button {
+                        viewModel.isShowingView = true
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .foregroundStyle(.blue)
+                                .frame(width: 50, height: 50)
+                            
+                            Image(systemName: "scribble.variable")
+                                .imageScale(.large)
+                                .foregroundStyle(.white)
+                        }
+                    }
                 }
+                
+                Spacer()
             }
+            .padding(50)
         }
         .sheet(isPresented: $viewModel.isShowingView, onDismiss: { viewModel.isShowingView = false }) {
             DrawView().presentationDetents([.medium])
