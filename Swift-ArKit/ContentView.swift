@@ -33,6 +33,8 @@ struct ContentView : View {
 }
 
 struct ARViewContainer: UIViewRepresentable {
+    
+    @EnvironmentObject var viewModel: ViewModel
 
     func makeUIView(context: Context) -> ARView {
 
@@ -76,12 +78,18 @@ struct ARViewContainer: UIViewRepresentable {
     func updateUIView(_ uiView: ARView, context: Context) {}
 
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(viewModel: viewModel)
     }
 
 }
 
 class Coordinator: NSObject {
+    let viewModel: ViewModel
+    
+    init(viewModel: ViewModel) {
+        self.viewModel = viewModel
+    }
+    
     weak var view: ARView?
 
     @objc func handleTap(_ recognizer: UITapGestureRecognizer) {
@@ -103,6 +111,9 @@ class Coordinator: NSObject {
             let modelEntity = ModelEntity(mesh: mesh, materials: [material])
             // 모델 객체에 대한 충돌 모양 생성
             modelEntity.generateCollisionShapes(recursive: true)
+            
+            // 뷰 모델의 드로잉에서 생성된 텍스처를 모델 엔티티 재질에 적용
+            modelEntity.model?.materials = [createTexture(drawing: viewModel.drawing?.cgImage)]
 
             // 모델 엔티티를 앵커 엔티티의 하위 추가
             anchorEntity.addChild(modelEntity)
@@ -112,6 +123,21 @@ class Coordinator: NSObject {
             // 모델 엔티티에 대한 제스처 설정
             view.installGestures(.all, for: modelEntity)
         }
+    }
+    
+    func createTexture(drawing: CGImage?) -> SimpleMaterial {
+        if let drawing = drawing {
+            let texture = try! TextureResource.generate(from: drawing, options: .init(semantic: .normal))
+            var material = SimpleMaterial()
+            material.color = .init(texture: .init(texture))
+            material.roughness = .float(0)
+            material.metallic = .float(0) // 텍스처를 사용하여 재료 색상을 설정
+            
+            return material
+        }
+        
+        // 드로잉이 nil이면 간단한 머터리얼 반환
+        return SimpleMaterial(color: .white, roughness: .float(0), isMetallic: false)
     }
 }
 
